@@ -162,15 +162,8 @@ return function (mod, GenSprite)
 
 
 
-
-
-    local chestspr = GenSprite(chestgfxpath, "head_down")
-    chestspr:SetCustomShader(s3dlib.shader.DefauldShaders["4Vertices"].path)
-
-
     local chestModel = modelfunc.FromConstructor(chest_const)
 
-    local zoff1,zoff2,zoff3 = -0.00003, -0.00004, -0.00005
     local bodyrot, headRot = v3n(0,0,0), v3n(0,0,0)
 
     mod:AddCallback(ModCallbacks.MC_POST_PLAYER_RENDER, function(_, player)
@@ -182,8 +175,6 @@ return function (mod, GenSprite)
         modelfunc.SetRotation(chestModel.childs[1], headRot)   --math.rad(45), math.rad(0), math.rad(0))
         modelfunc.UpdateVertices(chestModel)
         modelfunc.RenderModel(chestModel)
-
-
 
     end)
 
