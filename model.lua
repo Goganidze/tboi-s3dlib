@@ -7,7 +7,7 @@ return function(s3dlib)
     local mat4 = s3dlib.mat4
     local pi = math.pi
 
-    local vec3New,vec3add, vc = vec3.new, vec3.add, vec3.copy
+    local vec3New,vec3add, vc, vec3mul3 = vec3.new, vec3.add, vec3.copy, vec3.mulV3
     local rad,deg = math.rad, math.deg
     local fromRotationV3, rotateVec3 = quat.fromRotationV3, quat.rotateVec3
 
@@ -23,40 +23,13 @@ return function(s3dlib)
     ---@class s3dlib.modelfunc
     local model = {}
 
-    ---@class s3dlib.model
-    ---@field IsModel boolean
-    ---@field pos s3dlib.vec3
-    ---@field rot s3dlib.vec3
-    ---@field origrot s3dlib.vec3
-    ---@field rot_updated boolean
-    ---@field pivotFromParent? s3dlib.vec3
-    ---@field parent? s3dlib.model
-    ---@field vertices s3dlib.vec3[]
-    ---@field roted_vertices s3dlib.vec3[]
-    ---@field id_to_vertex any[]
-    ---@field orig_vertices s3dlib.vec3[]
-    ---@field polygons s3dlib.polygon[]
-    ---@field childs s3dlib.model[]
-
-
-    ---@class s3dlib.constructorPolygonInData
-    ---@field id integer
-    ---@field verticespointers number[]
-    ---@field spr Sprite
-    ---@field shader s3dlib.shader
-
-    ---@class s3dlib.polygon
-    ---@field id integer
-    ---@field verticespointers number[]
-    ---@field spr Sprite
-    ---@field shader s3dlib.shader
-
     function model.CreateConstructor()
         ---@class s3dlib.modelConstructor
         local constructor = {
             vertices = {},
             vertexByID = {},
             polygons = {},
+            polygonsById = {},
         }
         local vercs, vercIds = constructor.vertices, constructor.vertexByID
 
@@ -84,6 +57,7 @@ return function(s3dlib)
             end
             
             constructor.polygons[#constructor.polygons + 1] = poly
+            constructor.polygonsById[poly.id] = poly
         end
 
         constructor.AddChildModel = function(constr, pivot)
@@ -102,13 +76,16 @@ return function(s3dlib)
             pos = vec3New(0,0,0),
             rot = vec3New(0,0,0),
             origrot = vec3New(0,0,0),
+            scale = vec3New(1,1,1),
+            orig_scale = vec3New(1,1,1),
             --pivot = vec3New(0,0,0),
             orig_vertices = constructor.vertices,
             roted_vertices = tabCopy(constructor.vertices),
             vertices = tabCopy(constructor.vertices),
             rot_updated = false,
             id_to_vertex = constructor.vertexByID,
-            polygons = constructor.polygons
+            polygons = constructor.polygons,
+            polygonsById = constructor.polygonsById,
         }
         if constructor.childs then
             newModel.childs = {}
@@ -150,54 +127,101 @@ return function(s3dlib)
     end
 
     ---@param self s3dlib.model
+    function model.SetScale(self, scale)
+        self.scale = scale
+    end
+
+    ---@param self s3dlib.model
     function model.UpdateVertices(self)
         local pos = self.pos
         self.rot = vc(self.origrot)
         local rotation_quat = fromRotationV3(self.rot)
 
-        for i = 1, #self.orig_vertices do
-            local origvertex = self.orig_vertices[i]
+        local scale = self.scale
+        local useScale = scale[1] ~= 1 or scale[2] ~= 1 or scale[3] ~= 1
 
-            local vertex = rotateVec3(rotation_quat,origvertex)
-            self.vertices[i] = vec3add(vertex, pos)
-        end
-        if self.childs then
-            for _, child in ipairs(self.childs) do
-                model.UpdateChildVertices(child, self, rotation_quat)
+        if useScale then
+            for i = 1, #self.orig_vertices do
+                local origvertex = self.orig_vertices[i]
+                local scaledvertex = vec3mul3(origvertex, scale)
+    
+                local vertex = rotateVec3(rotation_quat,scaledvertex)
+                self.vertices[i] = vec3add(vertex, pos)
+            end
+            if self.childs then
+                for _, child in ipairs(self.childs) do
+                    model.UpdateChildVertices(child, self, rotation_quat, scale)
+                end
+            end
+
+        else
+            for i = 1, #self.orig_vertices do
+                local origvertex = self.orig_vertices[i]
+
+                local vertex = rotateVec3(rotation_quat,origvertex)
+                self.vertices[i] = vec3add(vertex, pos)
+            end
+            if self.childs then
+                for _, child in ipairs(self.childs) do
+                    model.UpdateChildVertices(child, self, rotation_quat)
+                end
             end
         end
     end
 
     ---@param self s3dlib.model
     ---@param parent s3dlib.model
-    function model.UpdateChildVertices(self, parent, parent_rotation_quat)
+    function model.UpdateChildVertices(self, parent, parent_rotation_quat, scale)
         --self.pos = parent.pos + self.pivotFromParent
         --local pos = parent.pos
+
+        local ChildScale = self.scale
+        local pivotFromParent = self.pivotFromParent
+        if scale then
+            pivotFromParent = vec3mul3(pivotFromParent, scale)
+            ChildScale = vec3mul3(ChildScale, scale)
+        end
         self.rot = vec3add(parent.rot,self.origrot)
-        local rotation_quat = fromRotationV3(self.rot)   --fromRotationV3(vec3add(parent.rot,self.rot))
-        self.pos = vec3add(parent.pos, rotateVec3(parent_rotation_quat, self.pivotFromParent))
+        local rotation_quat = fromRotationV3(self.rot)
+        self.pos = vec3add(parent.pos, rotateVec3(parent_rotation_quat, pivotFromParent))
         local pos = self.pos
 
-        for i = 1, #self.orig_vertices do
-            local origvertex = self.orig_vertices[i]
+        if scale then
+            for i = 1, #self.orig_vertices do
+                local origvertex = self.orig_vertices[i]
+                origvertex = vec3mul3(origvertex, ChildScale)
 
-            local vertex = rotateVec3(rotation_quat,origvertex)
-            self.vertices[i] = vec3add(vertex, pos)
-        end
-        if self.childs then
-            for _, child in ipairs(self.childs) do
-                model.UpdateChildVertices(child, self, rotation_quat)
+                local vertex = rotateVec3(rotation_quat,origvertex)
+                self.vertices[i] = vec3add(vertex, pos)
+            end
+            if self.childs then
+                for _, child in ipairs(self.childs) do
+                    model.UpdateChildVertices(child, self, rotation_quat)
+                end
+            end
+        else
+            for i = 1, #self.orig_vertices do
+                local origvertex = self.orig_vertices[i]
+
+                local vertex = rotateVec3(rotation_quat,origvertex)
+                self.vertices[i] = vec3add(vertex, pos)
+            end
+            if self.childs then
+                for _, child in ipairs(self.childs) do
+                    model.UpdateChildVertices(child, self, rotation_quat)
+                end
             end
         end
     end
 
-    local ZOFFSET = 0.001
+    local ZOFFSET = 65.5
     local renderOrder = 1
 
     ---@param self s3dlib.model
     function model.RenderModel(self)
         local modelvertxs = self.vertices
         local modelvertById = self.id_to_vertex
+        --local prespr
         for i = 1, #self.polygons do
             local poly = self.polygons[i]
             local polyverxs = poly.verticespointers
@@ -205,11 +229,12 @@ return function(s3dlib)
                 local v1,v2,v3,v4 = polyverxs[1], polyverxs[2], polyverxs[3], polyverxs[4]
                 local id1,id2,id3,id4 = v1 and modelvertById[v1], v2 and modelvertById[v2], v3 and modelvertById[v3], v4 and modelvertById[v4]
                 local ver1,ver2,ver3,ver4 = id1 and modelvertxs[id1], id2 and modelvertxs[id2], id3 and modelvertxs[id3], id4 and modelvertxs[id4]
-                poly.shader.SetParamsToShader(poly.spr, poly, ver1, ver2, ver3, ver4, ZOFFSET + renderOrder * -0.00001) --ZOFFSET + #self.polygons*0.1 + renderOrder * -0.1
+                poly.shader.SetParamsToShader(poly.spr, poly, ver1, ver2, ver3, ver4, ZOFFSET + renderOrder ) --  * -0.00001   --ZOFFSET + #self.polygons*0.1 + renderOrder * -0.1
 ---@diagnostic disable-next-line: param-type-mismatch
-                poly.spr:Render(Vector(ver1[1],ver1[2]))
-
+                poly.spr:Render(Vector(ver1[1] ,ver1[2]))
+                
                 renderOrder = renderOrder + 1
+                --prespr = poly.spr
             end
         end
         if self.childs then

@@ -15,6 +15,7 @@ local s3dlib = {
     path = path,
     folderpath = "resources/"..path,
 
+---@diagnostic disable-next-line: assign-type-mismatch
     InternalElementType = {
         vec3 = 1,
         mat4 = 2,

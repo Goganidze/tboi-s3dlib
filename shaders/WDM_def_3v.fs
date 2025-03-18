@@ -38,4 +38,5 @@ void main(void)
 	if(dot(gl_FragCoord.xy, ClipPlaneOut.xy) < ClipPlaneOut.z)
 		discard;
 	fragColor = texture2D(Texture0, TexCoord0);
+	fragColor.rgb = fragColor.rgb * clamp((gl_FragCoord.z-0.4955) * 1000., 0., 1.); 
 }

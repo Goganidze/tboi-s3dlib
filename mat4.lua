@@ -34,6 +34,26 @@ function mat4.addNum(a, b)
     return result
 end
 
+function mat4.subMat4(a, b)
+    local result = {t=2,}
+    for i = 0, 3 do
+        for j = 1, 4 do
+            result[i*4 + j] = a[i*4 + j] - b[i*4 + j]
+        end
+    end
+    return result
+end
+
+function mat4.subNum(a, b)
+    local result = {t=2,}
+    for i = 0, 3 do
+        for j = 1, 4 do
+            result[i*4 + j] = a[i*4 + j] - b
+        end
+    end
+    return result
+end
+
 function mat4.mul(a, b)
     local result = {t=2,}
     for i = 1, 4 do

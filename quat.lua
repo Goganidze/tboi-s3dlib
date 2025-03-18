@@ -1,12 +1,7 @@
 ---@class s3dlib.quatfunc
 local quat = {}
 
----@class s3dlib.quat
----@field [1] "X"|number
----@field [2] "Y"|number
----@field [3] "Z"|number
----@field [4] "W"|number
-
+local cos, sin = math.cos, math.sin
 
 ---@return s3dlib.quat
 function quat.new(x, y, z, w)
@@ -16,22 +11,24 @@ end
 ---@return s3dlib.quat
 function quat.fromAxisAngle(axis, angle)
     local halfAngle = angle / 2
-    local s = math.sin(halfAngle)
+    local s = sin(halfAngle)
     return {
         axis[1] * s,
         axis[2] * s,
         axis[3] * s,
-        math.cos(halfAngle)
+        cos(halfAngle)
     }
 end
 
 ---@return s3dlib.quat
 function quat.mul(a, b)
+    local a1,a2,a3,a4 = a[1],a[2],a[3],a[4]
+    local b1,b2,b3,b4 = b[1],b[2],b[3],b[4]
     return {
-        a[4] * b[1] + a[1] * b[4] + a[2] * b[3] - a[3] * b[2],
-        a[4] * b[2] - a[1] * b[3] + a[2] * b[4] + a[3] * b[1],
-        a[4] * b[3] + a[1] * b[2] - a[2] * b[1] + a[3] * b[4],
-        a[4] * b[4] - a[1] * b[1] - a[2] * b[2] - a[3] * b[3],
+        a4 * b1 + a1 * b4 + a2 * b3 - a3 * b2,
+        a4 * b2 - a1 * b3 + a2 * b4 + a3 * b1,
+        a4 * b3 + a1 * b2 - a2 * b1 + a3 * b4,
+        a4 * b4 - a1 * b1 - a2 * b2 - a3 * b3,
         t=3
     }
 end
@@ -54,17 +51,27 @@ function quat.fromRotation(x, y, z)
     local halfY = y * 0.5
     local halfZ = z * 0.5
 
-    local sinX = math.sin(halfX)
-    local cosX = math.cos(halfX)
-    local sinY = math.sin(halfY)
-    local cosY = math.cos(halfY)
-    local sinZ = math.sin(halfZ)
-    local cosZ = math.cos(halfZ)
+    local sinX = sin(halfX)
+    local cosX = cos(halfX)
+    local sinY = sin(halfY)
+    local cosY = cos(halfY)
+    local sinZ = sin(halfZ)
+    local cosZ = cos(halfZ)
 
-    local w = cosX * cosY * cosZ + sinX * sinY * sinZ
-    local x = sinX * cosY * cosZ - cosX * sinY * sinZ
-    local y = cosX * sinY * cosZ + sinX * cosY * sinZ
-    local z = cosX * cosY * sinZ - sinX * sinY * cosZ
+    local cosXcosY = cosX * cosY
+    local sinXcosY = sinX * cosY
+    local cosXsinY = cosX * sinY
+    local sinXsinY = sinX * sinY
+
+    local w = cosXcosY * cosZ + sinXsinY * sinZ
+    local x = sinXcosY * cosZ - cosXsinY * sinZ
+    local y = cosXsinY * cosZ + sinXcosY * sinZ
+    local z = cosXcosY * sinZ - sinXsinY * cosZ
+
+    --local w = cosX * cosY * cosZ + sinX * sinY * sinZ
+    --local x = sinX * cosY * cosZ - cosX * sinY * sinZ
+    --local y = cosX * sinY * cosZ + sinX * cosY * sinZ
+    --local z = cosX * cosY * sinZ - sinX * sinY * cosZ
 
     return {x, y, z, w, t=3}
 end
@@ -75,17 +82,27 @@ function quat.fromRotationV3(vec3)
     local halfY = vec3[2] * 0.5
     local halfZ = vec3[3] * 0.5
 
-    local sinX = math.sin(halfX)
-    local cosX = math.cos(halfX)
-    local sinY = math.sin(halfY)
-    local cosY = math.cos(halfY)
-    local sinZ = math.sin(halfZ)
-    local cosZ = math.cos(halfZ)
+    local sinX = sin(halfX)
+    local cosX = cos(halfX)
+    local sinY = sin(halfY)
+    local cosY = cos(halfY)
+    local sinZ = sin(halfZ)
+    local cosZ = (halfZ)
 
-    local w = cosX * cosY * cosZ + sinX * sinY * sinZ
-    local x = sinX * cosY * cosZ - cosX * sinY * sinZ
-    local y = cosX * sinY * cosZ + sinX * cosY * sinZ
-    local z = cosX * cosY * sinZ - sinX * sinY * cosZ
+    local cosXcosY = cosX * cosY
+    local sinXcosY = sinX * cosY
+    local cosXsinY = cosX * sinY
+    local sinXsinY = sinX * sinY
+
+    local w = cosXcosY * cosZ + sinXsinY * sinZ
+    local x = sinXcosY * cosZ - cosXsinY * sinZ
+    local y = cosXsinY * cosZ + sinXcosY * sinZ
+    local z = cosXcosY * sinZ - sinXsinY * cosZ
+
+    --local w = cosX * cosY * cosZ + sinX * sinY * sinZ
+    --local x = sinX * cosY * cosZ - cosX * sinY * sinZ
+    --local y = cosX * sinY * cosZ + sinX * cosY * sinZ
+    --local z = cosX * cosY * sinZ - sinX * sinY * cosZ
 
     return {x, y, z, w, t=3}
 end
@@ -101,9 +118,11 @@ function quat.rotateVec3(q, vec)
     local ay = z * vx - x * vz
     local az = x * vy - y * vx
 
-    local t1x = 2 * w * ax
-    local t1y = 2 * w * ay
-    local t1z = 2 * w * az
+    local w2 = 2 * w
+
+    local t1x = w2 * ax
+    local t1y = w2 * ay
+    local t1z = w2 * az
 
     local dot = x * vx + y * vy + z * vz
     local qxyzLenSq = x*x + y*y + z*z

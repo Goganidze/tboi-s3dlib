@@ -67,19 +67,19 @@ mat4 perspectiveMat(float fov, float aspect, float near, float far) {
     );
 }
 
-float cp = 2048.0;
-vec2 unpackQual(float packed) {
-    float dy = floor(packed / cp);
-    float dx = mod(packed, cp);
-    return vec2(dy, dx);
+vec2 unpackFloats(float packed) {
+    const float scale = 1024.0;
+    float a = fract(packed);
+    float b = floor(packed * scale) / (scale - 1.0);
+    return vec2(a, b);
 }
 
 
 void main(void) {
-    vec3 main_position = Position;
-    main_position.z = Color.a;
+    //vec3 main_position = Position;
+    //main_position.z = Color.a;
 
-    vec3 end_position = vec3(  //right down edge
+    /*vec3 end_position = vec3(  //right down edge
         Color.r / Color.a ,
         Color.g / Color.a ,
         Color.b / Color.a
@@ -95,7 +95,20 @@ void main(void) {
         ColorOffsetIn.r,
         ColorOffsetIn.g,
         ColorOffsetIn.b
-    );
+    );*/
+
+    vec3 main_position;
+    vec3 end_position;
+    vec3 angle_position;
+    vec3 dr_position;
+
+    main_position.xy = unpackFloats(Color.r);
+    main_position.z = unpackFloats(Color.g).x;
+    angle_position = vec3(unpackFloats(Color.g).y, unpackFloats(Color.b).xy);
+    dr_position.xy = unpackFloats(Color.a);
+    dr_position.z = unpackFloats(ColorizeIn.r).x;
+    end_position = vec3(unpackFloats(ColorizeIn.r).y, unpackFloats(ColorizeIn.g).xy);
+    
 
     mat4 trans2 = mat4(
 		Transform[0].x , Transform[0].y , 0. ,  0. ,
@@ -112,27 +125,22 @@ void main(void) {
     mat4 projection = perspectiveMat(fov, aspect, 0.1, 100.);
 	mat4 view = translateMat(vec3(0.0, 0.0, -1.0));
 
-    vec2 upcakedColorize = unpackQual(ColorizeIn.a);
-    float prcision = upcakedColorize.x;
-    float ZOffset = upcakedColorize.y;
-    float prcisionofffset = mod(1.0/prcision, 1.0);
-    if (prcision > 0.5 && prcision < 1.1) prcisionofffset = 0.5;
-    else if (prcision > 1.7 && prcision < 2.1) prcisionofffset = 0.25;
-    else if (prcision > 2.7)  {
-        prcision = 3.;
-        prcisionofffset = 1./6.;
-    }
-
     vec3 newPos;
     int VertexId = gl_VertexID % 4; // mod(gl_VertexID, 4);
     if (VertexId == 0) newPos = main_position;
     else if (VertexId == 1) newPos = angle_position;
     else if (VertexId == 2) newPos = dr_position;
     else if (VertexId == 3) newPos = end_position;
+    //newPos = floor( (newPos * 2.0 + vec3(0.5, 0.5, 0.5)) ) / 2.0;
 
+    //vec3 dotBetween = (main_position + end_position + angle_position + dr_position) / 4.0;
+    //vec3 antiShelOffset = normalize(newPos-dotBetween)*0.25;
+    //newPos += antiShelOffset;
 
-    newPos = floor( (newPos + vec3(prcisionofffset, prcisionofffset, 0.0)) * prcision ) / prcision;
-
+    //mat4 model = 
+    //    translateMat(newPos) *
+	//	translateMat(center) *
+	//	translateMat(-center);
 
     vec3 noZPos = vec3(newPos.xy, 0);
 
@@ -141,19 +149,12 @@ void main(void) {
     vec4 defGLPosition = Transform * vec4(Position.xyz, 1.0);
 
     vec4 refGl = defGLPosition;
-    refGl.z = refGl.z + clear_trans.z * 0.00001 + ZOffset * -0.00001 + 0.001;
+    refGl.z = refGl.z + clear_trans.z * 0.00001 + ColorizeIn.a * -0.00001 + 0.001;
     refGl.xy = clear_trans.xy;
     refGl.w = defGLPosition.w + proje_trans.w * 0.005;
 
     gl_Position = refGl;
 
     TexCoord0 = TexCoord;
-    TextureSizeOut = TextureSize;
-    ClipPlaneOut = ClipPlane;
-
-   // ZClipFarOut = min(main_position.z, min(end_position.z, min(angle_position.z, dr_position.z)));
-    //ZClipNearOut = max(main_position.z, max(end_position.z, max(angle_position.z, dr_position.z)));
-
-    //ZClipOut = ZClipFarOut;
 }
 
