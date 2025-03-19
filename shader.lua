@@ -1,5 +1,8 @@
 return function (s3dlib)
 
+local Options = Options
+local floor = math.floor
+
 local path = s3dlib.path
 
 ---@class s3dlib.shaderfunc
@@ -97,28 +100,30 @@ function shader.Constructor(data)
 
     --shade.SetParamsToShader = function(spr, Vertex1Pos, Vertex2Pos, Vertex3Pos, Vertex4Pos, Z_Offset)
 
-    local hasFuncReturns = data.RequestFunc
+    local hasFuncReturns = data.RequestFunc or data.RequestParams.RequestFunc
     local RequestFuncreturns = {}
     local RequestFuncreturnsByNum = {}
     if hasFuncReturns then
         for i,k in pairs(data.RequestParams) do
-            if i:find"FuncReturn_" then
-                RequestFuncreturns[#RequestFuncreturns+1] = i
+            --if i:find"FuncReturn_" then
+            if type(k) == "number" and k >= shader.shaderRequestParamType.FuncReturn_1 and k <= shader.shaderRequestParamType.FuncReturn_11 then
+                RequestFuncreturns[#RequestFuncreturns+1] = k-shader.shaderRequestParamType.FuncReturn_1+1 -- {i, k-shader.shaderRequestParamType.FuncReturn_1+1}
                 --RequestFuncreturnsByNum[tonumber(i:sub(12))] = i
             end
         end
         table.sort(RequestFuncreturnsByNum, function(a,b) return a:sub(12)<b:sub(12) end )
     end
     local returnedParamsStr = ""
+
     if #RequestFuncreturns > 0 then
         returnedParamsStr = "local "
         for i,k in ipairs(RequestFuncreturns) do
-            returnedParamsStr = returnedParamsStr .. k ", "
+            returnedParamsStr = returnedParamsStr .. "FuncReturn_".. k .. ", "
         end
         if returnedParamsStr:sub(-2) == ", " then
             returnedParamsStr = returnedParamsStr:sub(1, -3)
         end
-        returnedParamsStr = returnedParamsStr .. " = RequestFunc(poly, Vertex1Pos, Vertex2Pos, Vertex3Pos, Vertex4Pos)\n"
+        returnedParamsStr = returnedParamsStr .. " = RequestFunc(poly, Vertex1Pos, Vertex2Pos, Vertex3Pos, Vertex4Pos, Z_Offset)\n"
     end
 
     local refSetParamsToShader = "return function(RequestParams, RequestFunc) return function(spr, poly, Vertex1Pos, Vertex2Pos, Vertex3Pos, Vertex4Pos, Z_Offset) local sprCol = spr.Color \n" ..
@@ -130,10 +135,17 @@ function shader.Constructor(data)
         "sprCol:SetOffset( "..GSOfRP(data.RequestParams.ColorOffset_R, 9)..", "..GSOfRP(data.RequestParams.ColorOffset_G, 10)..", "..
             GSOfRP(data.RequestParams.ColorOffset_B, 11)..")\n end end"
 
-    shade.SetParamsToShader = load(refSetParamsToShader)()(data.RequestParams, data.RequestFunc)
+    shade.SetParamsToShader = load(refSetParamsToShader)()(data.RequestParams, hasFuncReturns)
 
     return shade
 end
+
+local packQual = function (x,y)
+    local y1 = y<<11
+    local packed = y1 + x
+    return packed
+end
+
 
 
 shader.DefauldShaders = {
@@ -147,7 +159,8 @@ shader.DefauldShaders = {
             ColorColorize_R = shaderRequestParamType.Vertex2_X,
             ColorColorize_G = shaderRequestParamType.Vertex2_Y,
             ColorColorize_B = shaderRequestParamType.Vertex2_Z,
-            ColorColorize_A = shaderRequestParamType.Z_Offset
+            ColorColorize_A = shaderRequestParamType.Z_Offset,
+            ColorOffset_R = function() return Options.MaxRenderScale end,
         }
     },
     ["4Vertices"] = shader.Constructor{
@@ -160,7 +173,9 @@ shader.DefauldShaders = {
             ColorColorize_R = shaderRequestParamType.Vertex2_X,
             ColorColorize_G = shaderRequestParamType.Vertex2_Y,
             ColorColorize_B = shaderRequestParamType.Vertex2_Z,
-            ColorColorize_A = shaderRequestParamType.Z_Offset,
+            ColorColorize_A = function(poly, Vertex1Pos, Vertex2Pos, Vertex3Pos, Vertex4Pos, Z_Offset) 
+                return packQual(Z_Offset,Options.MaxRenderScale) 
+            end,  --shaderRequestParamType.Z_Offset,
             ColorOffset_R = shaderRequestParamType.Vertex3_X,
             ColorOffset_G = shaderRequestParamType.Vertex3_Y,
             ColorOffset_B = shaderRequestParamType.Vertex3_Z

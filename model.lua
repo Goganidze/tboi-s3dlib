@@ -214,7 +214,7 @@ return function(s3dlib)
         end
     end
 
-    local ZOFFSET = 65.5
+    local ZOFFSET = 1.
     local renderOrder = 1
 
     ---@param self s3dlib.model

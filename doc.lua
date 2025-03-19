@@ -94,17 +94,17 @@ local s3dlib = {}
 ---@field SetParamsToShader fun(spr, poly, Vertex1Pos:s3dlib.vec3, Vertex2Pos:s3dlib.vec3, Vertex3Pos:s3dlib.vec3, Vertex4Pos:s3dlib.vec3, Z_Offset)
 
 ---@class s3dlib.shaderParams
----@field Color_R s3dlib.shaderRequestParamType|(fun(poly, Vertex1Pos, Vertex2Pos, Vertex3Pos, Vertex4Pos):number)?
----@field Color_G s3dlib.shaderRequestParamType|(fun(poly, Vertex1Pos, Vertex2Pos, Vertex3Pos, Vertex4Pos):number)?
----@field Color_B s3dlib.shaderRequestParamType|(fun(poly, Vertex1Pos, Vertex2Pos, Vertex3Pos, Vertex4Pos):number)?
----@field Color_A s3dlib.shaderRequestParamType|(fun(poly, Vertex1Pos, Vertex2Pos, Vertex3Pos, Vertex4Pos):number)?
----@field ColorColorize_R s3dlib.shaderRequestParamType|(fun(poly, Vertex1Pos, Vertex2Pos, Vertex3Pos, Vertex4Pos):number)?
----@field ColorColorize_G s3dlib.shaderRequestParamType|(fun(poly, Vertex1Pos, Vertex2Pos, Vertex3Pos, Vertex4Pos):number)?
----@field ColorColorize_B s3dlib.shaderRequestParamType|(fun(poly, Vertex1Pos, Vertex2Pos, Vertex3Pos, Vertex4Pos):number)?
----@field ColorColorize_A s3dlib.shaderRequestParamType|(fun(poly, Vertex1Pos, Vertex2Pos, Vertex3Pos, Vertex4Pos):number)?
----@field ColorOffset_R s3dlib.shaderRequestParamType|(fun(poly, Vertex1Pos, Vertex2Pos, Vertex3Pos, Vertex4Pos):number)?
----@field ColorOffset_G s3dlib.shaderRequestParamType|(fun(poly, Vertex1Pos, Vertex2Pos, Vertex3Pos, Vertex4Pos):number)?
----@field ColorOffset_B s3dlib.shaderRequestParamType|(fun(poly, Vertex1Pos, Vertex2Pos, Vertex3Pos, Vertex4Pos):number)?
+---@field Color_R s3dlib.shaderRequestParamType|(fun(poly, Vertex1Pos, Vertex2Pos, Vertex3Pos, Vertex4Pos, Z_Offset):number)?
+---@field Color_G s3dlib.shaderRequestParamType|(fun(poly, Vertex1Pos, Vertex2Pos, Vertex3Pos, Vertex4Pos, Z_Offset):number)?
+---@field Color_B s3dlib.shaderRequestParamType|(fun(poly, Vertex1Pos, Vertex2Pos, Vertex3Pos, Vertex4Pos, Z_Offset):number)?
+---@field Color_A s3dlib.shaderRequestParamType|(fun(poly, Vertex1Pos, Vertex2Pos, Vertex3Pos, Vertex4Pos, Z_Offset):number)?
+---@field ColorColorize_R s3dlib.shaderRequestParamType|(fun(poly, Vertex1Pos, Vertex2Pos, Vertex3Pos, Vertex4Pos, Z_Offset):number)?
+---@field ColorColorize_G s3dlib.shaderRequestParamType|(fun(poly, Vertex1Pos, Vertex2Pos, Vertex3Pos, Vertex4Pos, Z_Offset):number)?
+---@field ColorColorize_B s3dlib.shaderRequestParamType|(fun(poly, Vertex1Pos, Vertex2Pos, Vertex3Pos, Vertex4Pos, Z_Offset):number)?
+---@field ColorColorize_A s3dlib.shaderRequestParamType|(fun(poly, Vertex1Pos, Vertex2Pos, Vertex3Pos, Vertex4Pos, Z_Offset):number)?
+---@field ColorOffset_R s3dlib.shaderRequestParamType|(fun(poly, Vertex1Pos, Vertex2Pos, Vertex3Pos, Vertex4Pos, Z_Offset):number)?
+---@field ColorOffset_G s3dlib.shaderRequestParamType|(fun(poly, Vertex1Pos, Vertex2Pos, Vertex3Pos, Vertex4Pos, Z_Offset):number)?
+---@field ColorOffset_B s3dlib.shaderRequestParamType|(fun(poly, Vertex1Pos, Vertex2Pos, Vertex3Pos, Vertex4Pos, Z_Offset):number)?
 
 ---@class s3dlib.modelfunc
 ---@field CreateConstructor fun():s3dlib.modelConstructor
